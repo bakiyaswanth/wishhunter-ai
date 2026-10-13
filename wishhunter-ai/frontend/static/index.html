@@ -3,73 +3,386 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agent</title>
+<title>WishHunter AI</title>
 <!-- Optional: used only to draw A2UI Icon components. If it can't load (offline/
      corp network), icons fall back to showing their name as text. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
 <style>
-  :root { --accent:#1a73e8; --bg:#f6f8fa; --border:#dfe3e8; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); display:flex; flex-direction:column; height:100vh; }
-  header { background:var(--accent); color:#fff; padding:.9rem 1.2rem; font-weight:700; }
-  #log { flex:1; overflow-y:auto; padding:1.2rem; max-width:780px; width:100%; margin:0 auto; }
-  .msg { margin:.6rem 0; }
-  .msg.user { text-align:right; }
-  .bubble { display:inline-block; padding:.6rem .9rem; border-radius:12px; background:#fff; border:1px solid var(--border); text-align:left; max-width:90%; white-space:pre-wrap; }
-  .msg.user .bubble { background:var(--accent); color:#fff; border:none; }
-  /* When the reply is an A2UI card, drop the bubble chrome so the card stands alone. */
-  .bubble.rich { background:transparent; border:none; padding:0; max-width:100%; white-space:normal; }
-  form { display:flex; gap:.5rem; padding:1rem; border-top:1px solid var(--border); background:#fff; }
-  input { flex:1; padding:.7rem; border:1px solid var(--border); border-radius:8px; font-size:1rem; }
-  button { padding:.7rem 1.1rem; border:none; border-radius:8px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
+  :root {
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-light: #eef2ff;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    color: var(--text-primary);
+  }
+
+  /* App Header */
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    z-index: 10;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.28);
+  }
+  .header-icon .material-symbols-outlined {
+    font-size: 1.35rem;
+    color: #fff;
+  }
+  .header-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+  .header-status {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.15rem;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  }
+  .header-badge {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid rgba(79, 70, 229, 0.15);
+  }
+
+  /* Dialogue Container */
+  .dialogue-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 65px);
+    max-width: 860px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1.2rem;
+    width: 100%;
+    scroll-behavior: smooth;
+  }
+
+  /* Dialogue Message Rows */
+  .msg {
+    display: flex;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+    align-items: flex-start;
+  }
+  .msg.user {
+    justify-content: flex-end;
+  }
+  .msg-content {
+    display: flex;
+    flex-direction: column;
+    max-width: 82%;
+  }
+  .msg.user .msg-content {
+    align-items: flex-end;
+  }
+  .msg-author {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+    padding: 0 0.2rem;
+  }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .msg.agent .avatar {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+  }
+  .msg.agent .avatar .material-symbols-outlined {
+    font-size: 1.2rem;
+    color: #fff;
+  }
+  .msg.user .avatar {
+    background: #e2e8f0;
+  }
+  .msg.user .avatar .material-symbols-outlined {
+    font-size: 1.2rem;
+    color: #475569;
+  }
+
+  /* Chat Bubbles */
+  .bubble {
+    display: inline-block;
+    padding: 0.85rem 1.15rem;
+    border-radius: 4px 18px 18px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    text-align: left;
+    max-width: 100%;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .msg.user .bubble {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    border: none;
+    border-radius: 18px 4px 18px 18px;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.22);
+  }
+  .bubble.rich {
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 100%;
+    white-space: normal;
+    box-shadow: none;
+  }
+
+  /* Dialogue Footer & Inputs */
+  .dialogue-footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+    border-radius: 16px 16px 0 0;
+  }
+  .examples-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1.2rem 0.2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .example-btn {
+    background: var(--bg);
+    color: #334155;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .example-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+  }
+  form {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.75rem 1.2rem 1.1rem;
+    align-items: center;
+  }
+  input {
+    flex: 1;
+    padding: 0.8rem 1.15rem;
+    border: 1.5px solid var(--border);
+    border-radius: 24px;
+    font-size: 0.95rem;
+    background: var(--bg);
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  input:focus {
+    border-color: var(--accent);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+  button[type="submit"] {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  }
+  button[type="submit"]:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+  }
+  button .send-icon {
+    font-size: 1.2rem;
+    color: #fff;
+    margin-left: 2px;
+  }
 
   /* --- A2UI component styles (Card, Column, Row, Text, Divider, List, Image, Icon) --- */
-  .a2card { border:1px solid var(--border); border-radius:12px; padding:1rem; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.06); max-width:100%; }
-  .a2card + .a2card, .a2col > .a2card { margin-top:.6rem; }
-  .a2col { display:flex; flex-direction:column; gap:.4rem; }
-  .a2row { display:flex; flex-direction:row; gap:.6rem; align-items:center; flex-wrap:wrap; }
-  .a2row.between { justify-content:space-between; }
-  .a2text { margin:0; line-height:1.4; }
-  .a2text.a2-h1 { font-size:1.5rem; font-weight:700; }
-  .a2text.a2-h2 { font-size:1.25rem; font-weight:700; }
-  .a2text.a2-h3 { font-size:1.1rem; font-weight:600; }
-  .a2text.a2-h4 { font-size:1rem; font-weight:600; }
-  .a2text.a2-caption { font-size:.85rem; color:#666; }
-  .a2divider { border:none; border-top:1px solid var(--border); margin:.4rem 0; width:100%; }
-  .a2img { max-width:100%; border-radius:8px; display:block; }
-  .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-size:1.25rem; line-height:1; vertical-align:middle; color:var(--accent); }
+  .a2card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem;
+    background: var(--surface);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    max-width: 100%;
+  }
+  .a2card + .a2card, .a2col > .a2card { margin-top: 0.6rem; }
+  .a2col { display: flex; flex-direction: column; gap: 0.45rem; }
+  .a2row { display: flex; flex-direction: row; gap: 0.65rem; align-items: center; flex-wrap: wrap; }
+  .a2row.between { justify-content: space-between; }
+  .a2text { margin: 0; line-height: 1.45; }
+  .a2text.a2-h1 { font-size: 1.45rem; font-weight: 700; color: var(--text-primary); }
+  .a2text.a2-h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+  .a2text.a2-h3 { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
+  .a2text.a2-h4 { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+  .a2text.a2-caption { font-size: 0.85rem; color: var(--text-secondary); }
+  .a2divider { border: none; border-top: 1px solid var(--border); margin: 0.5rem 0; width: 100%; }
+  .a2img { max-width: 100%; border-radius: 10px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-size: 1.25rem; line-height: 1; vertical-align: middle; color: var(--accent); }
 </style>
 </head>
 <body>
-<header>Your Agent</header>
-<div id="log"></div>
-<form id="form">
-  <input id="input" placeholder="Ask something…" autocomplete="off" autofocus>
-  <button>Send</button>
-</form>
+
+<header class="app-header">
+  <div class="header-brand">
+    <div class="header-icon">
+      <span class="material-symbols-outlined">local_mall</span>
+    </div>
+    <div class="header-text">
+      <div class="header-title">WishHunter AI</div>
+      <div class="header-status">
+        <span class="status-dot"></span> Shopping Intelligence • India
+      </div>
+    </div>
+  </div>
+  <div class="header-badge">India 🇮🇳</div>
+</header>
+
+<div class="dialogue-container">
+  <div id="log">
+    <div class="msg agent">
+      <div class="avatar">
+        <span class="material-symbols-outlined">smart_toy</span>
+      </div>
+      <div class="msg-content">
+        <div class="msg-author">WishHunter AI</div>
+        <div class="bubble">Namaste! 👋 I'm WishHunter AI, your shopping intelligence assistant. I compare live prices, analyze 90-day trends, check Indian PIN code deliveries, and give personalized "Buy Now vs. Wait" advice. Ask me anything or tap an example below!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialogue-footer">
+    <div class="examples-row">
+      <button type="button" class="example-btn" onclick="sendPrompt(this.textContent)">Should I buy OnePlus 12R now or wait?</button>
+      <button type="button" class="example-btn" onclick="sendPrompt(this.textContent)">Check delivery for iPhone 15 to PIN 560001</button>
+      <button type="button" class="example-btn" onclick="sendPrompt(this.textContent)">Find electronics stores near Indiranagar</button>
+    </div>
+    <form id="form">
+      <input id="input" placeholder="Ask WishHunter AI about deals, prices, or stores…" autocomplete="off" autofocus>
+      <button type="submit" aria-label="Send">
+        <span class="material-symbols-outlined send-icon">send</span>
+      </button>
+    </form>
+  </div>
+</div>
 
 <script>
 const log = document.getElementById("log");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 
-function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
 
 function bubble(who) {
   const m = el("div", "msg " + who);
+  const avatar = el("div", "avatar");
+  const icon = el("span", "material-symbols-outlined");
+  icon.textContent = who === "agent" ? "smart_toy" : "person";
+  avatar.appendChild(icon);
+
+  const contentWrap = el("div", "msg-content");
+  const author = el("div", "msg-author", who === "agent" ? "WishHunter AI" : "You");
   const b = el("div", "bubble");
-  m.appendChild(b); log.appendChild(m); log.scrollTop = log.scrollHeight;
+
+  contentWrap.appendChild(author);
+  contentWrap.appendChild(b);
+
+  if (who === "agent") {
+    m.appendChild(avatar);
+    m.appendChild(contentWrap);
+  } else {
+    m.appendChild(contentWrap);
+    m.appendChild(avatar);
+  }
+
+  log.appendChild(m);
+  log.scrollTop = log.scrollHeight;
   return b;
 }
 
 /* ----------------------------------------------------------------------------
  * A2UI mini-renderer (v0.8 Basic Catalog subset).
  * Renders Card / Column / Row / Text / Divider / List / Image / Icon.
- * Anything else falls back to plain text (see renderReply). All text goes in via
- * textContent and image URLs are validated, so agent output can't inject HTML.
  * -------------------------------------------------------------------------- */
 
-// A "bound value" is usually {literalString: "..."}; we only support literals.
 function boundStr(v) {
   if (v == null) return "";
   if (typeof v === "string") return v;
@@ -77,7 +390,6 @@ function boundStr(v) {
   return "";
 }
 
-// child ids of a component's props: single `child` and/or `children.explicitList`.
 function childIds(props) {
   const ids = [];
   if (props && typeof props.child === "string") ids.push(props.child);
@@ -86,11 +398,12 @@ function childIds(props) {
   return ids;
 }
 
-// A2UI icon names are camelCase (locationOn); Material Symbols wants snake_case.
-function iconName(n) { return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase(); }
+function iconName(n) {
+  return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase();
+}
 
 function buildNode(id, comps, seen) {
-  if (!id || seen.has(id)) return null;   // missing / cycle guard
+  if (!id || seen.has(id)) return null;
   seen.add(id);
   const spec = comps[id];
   if (!spec || typeof spec !== "object") return null;
@@ -123,19 +436,17 @@ function buildNode(id, comps, seen) {
       return el("hr", "a2divider");
     case "Image": {
       const src = boundStr(props.url || props.src);
-      if (!/^https?:\/\//i.test(src)) return null;   // only allow safe URLs
-      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt) || ""; return img;
+      if (!/^https?:\/\//i.test(src)) return null;
+      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt || props.altText) || ""; return img;
     }
     case "Icon": {
       const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
     }
     default:
-      return null;   // unknown component -> skipped (text fallback covers content)
+      return null;
   }
 }
 
-// Render one or more A2UI messages (beginRendering + surfaceUpdate) into `container`.
-// Returns true if anything was drawn.
 function renderSurface(messages, container) {
   const comps = {};
   const roots = [];
@@ -145,7 +456,7 @@ function renderSurface(messages, container) {
     if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.id && c.component) comps[c.id] = c.component;
   }
   let rootIds = roots.filter(r => comps[r]);
-  if (rootIds.length === 0) {   // no valid root given -> infer un-referenced components
+  if (rootIds.length === 0) {
     const referenced = new Set();
     for (const id in comps) { const spec = comps[id]; childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c)); }
     rootIds = Object.keys(comps).filter(id => !referenced.has(id));
@@ -155,7 +466,6 @@ function renderSurface(messages, container) {
   return drew;
 }
 
-// Fallback: pull every Text value out of the messages as plain text.
 function flattenText(messages) {
   const out = [];
   for (const m of messages) {
@@ -166,7 +476,7 @@ function flattenText(messages) {
 }
 
 function renderReply(b, parts) {
-  b.textContent = "";   // clear the "…" placeholder
+  b.textContent = "";
   const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
   const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
 
@@ -181,19 +491,13 @@ function renderReply(b, parts) {
   log.scrollTop = log.scrollHeight;
 }
 
-// The proxy returns { parts: [{kind:"text",text} | {kind:"a2ui",data}] }.
-form.addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  const text = input.value.trim();
+async function sendPrompt(text) {
   if (!text) return;
   bubble("user").textContent = text;
   input.value = "";
   const b = bubble("agent"); b.textContent = "…";
   try {
     const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
-    // Read as text first, then parse. If the proxy ever returns a non-JSON error
-    // page (e.g. a plain "Internal Server Error"), show that body instead of a
-    // cryptic "Unexpected token" JSON error.
     const raw = await res.text();
     let data;
     try { data = JSON.parse(raw); }
@@ -202,6 +506,11 @@ form.addEventListener("submit", async (ev) => {
   } catch (e) {
     b.textContent = "Error: " + e.message;
   }
+}
+
+form.addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  sendPrompt(input.value.trim());
 });
 </script>
 </body>
